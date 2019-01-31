@@ -1,4 +1,4 @@
-package com.woodie.socketlib;
+package com.woodie.bean;
 
 /**
  * ProjectName:    SocketLib

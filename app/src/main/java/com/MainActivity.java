@@ -1,33 +1,27 @@
 package com;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
-
-import com.blankj.utilcode.util.NetworkUtils;
 import com.blankj.utilcode.util.RegexUtils;
 import com.blankj.utilcode.util.ToastUtils;
-import com.orhanobut.logger.AndroidLogAdapter;
-import com.orhanobut.logger.FormatStrategy;
 import com.orhanobut.logger.Logger;
-import com.orhanobut.logger.PrettyFormatStrategy;
-import com.woodie.socketlib.OkHttpTool;
-import com.woodie.socketlib.SocketAPI;
-import com.woodie.socketlib.SocketTool;
-
-import org.json.JSONException;
-
+import com.woodie.base.BaseActivity;
+import com.woodie.http.HttpEvent;
+import com.woodie.http.OkHttpDataCallBack;
+import com.woodie.socketlib.R;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import java.io.IOException;
 import butterknife.BindView;
-import butterknife.ButterKnife;
 import butterknife.OnClick;
-import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
-    private SocketTool mSocketTool;//全局sokcet变量
-    private SocketAPI mSocketAPI;
-    private OkHttpTool mOkHttpTool;
+    private String username;
+    private String password;
 
     @BindView(R.id.editText) EditText mUserNameET;
     @BindView(R.id.editText2) EditText mPasswordET;
@@ -46,43 +40,58 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+    }
 
-        FormatStrategy formatStrategy = PrettyFormatStrategy.newBuilder()
-                .showThreadInfo(false)  // (Optional) Whether to show thread info or not. Default true
-                .methodCount(0)         // (Optional) How many method line to show. Default 2
-                .methodOffset(7)        // (Optional) Hides internal method calls up to offset. Default 5
-//                .logStrategy(customLog) // (Optional) Changes the log strategy to print out. Default LogCat
-                .tag("My custom tag")   // (Optional) Global tag for every log. Default PRETTY_LOGGER
-                .build();
-        Logger.addLogAdapter(new AndroidLogAdapter(formatStrategy));
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //反注册
+        EventBus.getDefault().unregister(this);
+    }
 
-        ButterKnife.bind(this);
-
-        mOkHttpTool = new OkHttpTool();
-        mOkHttpTool.getInstance();
-
-        mSocketTool = new SocketTool();
-        mSocketAPI = mSocketTool.mSocketAPI;
-        mSocketTool.getInstance(this,"192.168.168.104",11500,0x02,0x03);
+    /**
+     * 事件响应方法
+     * 接收消息
+     * @param event
+     * */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEventMainThread(HttpEvent event) {
+        Logger.d( "onEventMainThread收到了消息：" + event.getmMsg());
     }
 
     private void Login(){
-        String username = mUserNameET.getText().toString();
-        String password = mPasswordET.getText().toString();
+        username = mUserNameET.getText().toString();
+        password = mPasswordET.getText().toString();
         if(username.isEmpty() || password.isEmpty()){
             ToastUtils.showShort("username and password can't be empty!");
             return;
         }
-        if(!NetworkUtils.isAvailableByPing()){
-            ToastUtils.showShort("Network Unavailable");
-            return;
-        }
-        if(!RegexUtils.isTel(username) || !RegexUtils.isEmail(username)){
-            ToastUtils.showShort("Username and password must be mobile number or email");
-            return;
+//        if(!NetworkUtils.isAvailableByPing()){
+//            ToastUtils.showShort("Network Unavailable");
+//            return;
+//        }
+        if(!RegexUtils.isEmail(username)){
+            if(RegexUtils.isMobileExact(username) ){
+                username = "86-"+username;
+            } else {
+                ToastUtils.showShort("Username must be mobile number or email");
+                return;
+            }
         }
 
-        String url = "https://connect.owon.com:443/accsystem/api/json";
-        mOkHttpTool.postAsynBackString(url,)
+        final String url = "https://connect.owon.com:443/accsystem/api/json";
+        mOkHttpTool.postAsynRequireJson(url,
+                mSocketAPI.LoginAccount(username,password),
+                new OkHttpDataCallBack() {
+            @Override
+            public void requestSuccess(Object result) {
+                Logger.d(result.toString());
+                EventBus.getDefault().post(new HttpEvent(result.toString()));
+            }
+            @Override
+            public void requestFailure(Request request, IOException e) {
+                Logger.d(request.toString()+"IOException:"+e.toString());
+            }
+        });
     }
 }

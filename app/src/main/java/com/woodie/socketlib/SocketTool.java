@@ -3,6 +3,7 @@ package com.woodie.socketlib;
 import android.content.Context;
 import android.os.Handler;
 import com.orhanobut.logger.Logger;
+import com.woodie.bean.SocketAPI;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
 import com.xuhao.didi.core.pojo.OriginalData;
@@ -43,10 +44,12 @@ public class SocketTool {
     private ConnectionInfo mInfo;
     private boolean mStickyPacketFlag = false;//是否粘包标志位
     private List<Byte> mStickyPacketData =new ArrayList<>(); //粘包数据存放
-    public SocketAPI mSocketAPI;
 
-    public void getInstance(Context context,String ip,int port,int packageHead,int packageEnd) {
+    public void getInstance(Context context){
         this.mContext = context;
+    }
+
+    public void creatSocket(String ip,int port,int packageHead,int packageEnd) {
         this.mIP = ip;
         this.mPort = port;
         this.mPackageHead = packageHead;
@@ -55,16 +58,7 @@ public class SocketTool {
             initManager();
             mManager.connect();
         }
-        initSocketAPI();
     }
-
-    private void initSocketAPI(){
-        if(this.mSocketAPI == null) {
-            this.mSocketAPI = new SocketAPI();
-        }
-    }
-
-
 
     private void initManager() {
         final Handler handler = new Handler();
@@ -261,7 +255,6 @@ public class SocketTool {
         if (byteArray == null) {
             return null;
         }
-        String buf = new String(byteArray, Charset.forName("utf-8"));
-        return buf;
+        return new String(byteArray, Charset.forName("utf-8"));
     }
 }

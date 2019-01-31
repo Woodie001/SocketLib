@@ -1,4 +1,4 @@
-package com.woodie.socketlib;
+package com.woodie.http;
 
 import com.google.gson.internal.$Gson$Types;
 
@@ -42,12 +42,12 @@ public abstract class OkHttpDataCallBack<T> {
         ParameterizedType parameterized = (ParameterizedType) superclass;
         return $Gson$Types.canonicalize(parameterized.getActualTypeArguments()[0]);
     }
-    /**
-     * 在请求之前的方法，一般用于加载进度框ProgressBar展示
-     *
-     * @param request
-     */
-    public abstract void onBefore(Request request);
+//    /**
+//     * 在请求之前的方法，一般用于加载进度框ProgressBar展示
+//     *
+//     * @param request
+//     */
+//    public abstract void onBefore(Request request);
 
     public abstract void requestSuccess(T result);
 
@@ -60,5 +60,5 @@ public abstract class OkHttpDataCallBack<T> {
     /**
      * 在请求之后的方法，一般用于加载框隐藏
      */
-    public abstract void onAfter();
+//    public abstract void onAfter();
 }

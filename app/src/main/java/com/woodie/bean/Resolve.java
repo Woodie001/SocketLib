@@ -1,4 +1,4 @@
-package com.woodie.socketlib;
+package com.woodie.bean;
 
 /**
  * ProjectName:    SocketLib
@@ -13,5 +13,8 @@ package com.woodie.socketlib;
  * Version:        1.0
  */
 public class Resolve {
+    public LoginAccountBean LoginAccount(String data){
+        LoginAccountBean loginAccountBean = new LoginAccountBean();
 
+    }
 }

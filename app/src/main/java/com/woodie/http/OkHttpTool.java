@@ -1,10 +1,8 @@
-package com.woodie.socketlib;
+package com.woodie.http;
 
 import android.os.Environment;
-
 import com.google.gson.Gson;
 import com.orhanobut.logger.Logger;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,21 +10,19 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.net.FileNameMap;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import okhttp3.Cache;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.Cookie;
-import okhttp3.CookieJar;
 import okhttp3.FormBody;
 import okhttp3.Headers;
-import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -51,46 +47,14 @@ public class OkHttpTool {
     private static OkHttpClient okHttpClient;
     private volatile static OkHttpTool instance;//防止多个线程同时访问
     //提交json数据
-    private static final MediaType JSON = MediaType.parse("application/json;charset=utf-8");
+    private static final MediaType JSON = MediaType.parse("application/json;charset=UTF-8");
     //提交字符串数据
     private static final MediaType MEDIA_TYPE_MARKDOWN = MediaType.parse("text/x-markdown;charset=utf-8");
     private static String responseStrGETAsyn;
 
-    private final HashMap<String, List<Cookie>> cookieStore = new HashMap<>();
-    // 使用getCacheDir()来作为缓存文件的存放路径（/data/data/包名/cache） ，
-// 如果你想看到缓存文件可以临时使用 getExternalCacheDir()（/sdcard/Android/data/包名/cache）。
-    private static File cacheFile;
-    private static Cache cache;
-
-    public OkHttpTool() {
-//        if (APP.getInstance().getApplicationContext().getCacheDir()!=null){
-//            cacheFile = new File(APP.getInstance().getCacheDir(), "Test");
-//            cache = new Cache(cacheFile, 1024 * 1024 * 10);
-//        }
-
-        okHttpClient = new OkHttpClient();
-        okHttpClient.newBuilder()
-//                .addInterceptor(new HeaderInterceptor())
-//                .addNetworkInterceptor(new CacheInterceptor())
-//                .cache(cache)
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
-                .writeTimeout(10, TimeUnit.SECONDS)
-                .cookieJar(new CookieJar() {
-                    @Override
-                    public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-                        cookieStore.put(url.host(), cookies);
-                    }
-
-                    @Override
-                    public List<Cookie> loadForRequest(HttpUrl url) {
-                        List<Cookie> cookies = cookieStore.get(url.host());
-                        return cookies != null ? cookies : new ArrayList<Cookie>();
-//自动管理Cookie发送Request都不用管Cookie这个参数也不用去response获取新Cookie什么的了。还能通过cookieStore获取当前保存的Cookie。
-                    }
-                });
+    private OkHttpTool() {
+        okHttpClient = getUnsafeOkHttpClient();
     }
-
 
     /**
      * 懒汉式加锁单例模式
@@ -107,6 +71,49 @@ public class OkHttpTool {
         return instance;
     }
 
+    //okHttp3添加信任所有证书
+    private static OkHttpClient getUnsafeOkHttpClient() {
+
+        try {
+            final TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[]{};
+                        }
+                    }
+            };
+
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            final javax.net.ssl.SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
+            builder.sslSocketFactory(sslSocketFactory);
+
+            builder.hostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            });
+
+            builder.connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(10, TimeUnit.SECONDS)
+                    .writeTimeout(10, TimeUnit.SECONDS);
+
+            return builder.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * get同步请求不需要传参数
@@ -219,7 +226,7 @@ public class OkHttpTool {
                 .build();
         Call call = okHttpClient.newCall(request);
         try {
-            okHttpDataCallBack.onBefore(request);
+//            okHttpDataCallBack.onBefore(request);
             // 请求加入调度
             call.enqueue(new Callback() {
 
@@ -243,7 +250,7 @@ public class OkHttpTool {
                 }
             });
 
-            okHttpDataCallBack.onAfter();
+//            okHttpDataCallBack.onAfter();
         } catch (Exception e) {
             Logger.e("GET异步请求解析为String异常" + e.toString());
             e.printStackTrace();
@@ -271,7 +278,7 @@ public class OkHttpTool {
                 .build();
         Call call = okHttpClient.newCall(request);
         try {
-            okHttpDataCallBack.onBefore(request);
+//            okHttpDataCallBack.onBefore(request);
             // 请求加入调度
             call.enqueue(new Callback() {
 
@@ -295,7 +302,7 @@ public class OkHttpTool {
                 }
             });
 
-            okHttpDataCallBack.onAfter();
+//            okHttpDataCallBack.onAfter();
         } catch (Exception e) {
             Logger.e("GET异步请求解析为String异常" + e.toString());
             e.printStackTrace();
@@ -332,7 +339,7 @@ public class OkHttpTool {
                 .build();
         Call call = okHttpClient.newCall(request);
         try {
-            okHttpDataCallBack.onBefore(request);
+//            okHttpDataCallBack.onBefore(request);
             // 请求加入调度
             call.enqueue(new Callback() {
 
@@ -356,7 +363,7 @@ public class OkHttpTool {
                 }
             });
 
-            okHttpDataCallBack.onAfter();
+//            okHttpDataCallBack.onAfter();
         } catch (Exception e) {
             Logger.e("POST异步请求解析为String异常" + e.toString());
             e.printStackTrace();
@@ -391,7 +398,7 @@ public class OkHttpTool {
      * @param url
      * @return
      */
-    public String postAsynRequireJson(String url, Map<String, String> params, final OkHttpDataCallBack okHttpDataCallBack) {
+    public String postAsynRequireJson(String url, Map<String, Object> params, final OkHttpDataCallBack okHttpDataCallBack) {
 
         if (params == null) {
             params = new HashMap<>();
@@ -399,10 +406,10 @@ public class OkHttpTool {
         // 将map转换成json,需要引入Gson包
         String mapToJson = new Gson().toJson(params);
         final String realURL = urlJoint(url, null);
-        final Request request = buildJsonPostRequest(realURL, mapToJson);
+        final Request request = buildJsonPostRequest(url, mapToJson);
         Call call = okHttpClient.newCall(request);
         try {
-            okHttpDataCallBack.onBefore(request);
+//            okHttpDataCallBack.onBefore(request);
             // 请求加入调度
             call.enqueue(new Callback() {
 
@@ -425,7 +432,49 @@ public class OkHttpTool {
                 }
             });
 
-            okHttpDataCallBack.onAfter();
+//            okHttpDataCallBack.onAfter();
+        } catch (Exception e) {
+            Logger.e("POST异步请求解析为String异常" + e.toString());
+            e.printStackTrace();
+        }
+        return responseStrGETAsyn;
+    }
+
+    /**
+     * post异步请求json传参
+     * 通过response.body().string()获取返回的字符串
+     * 异步返回值不能更新UI，要开启新线程
+     *
+     * @param url
+     * @return
+     */
+    public String postAsynRequireJson(String url, String json, final OkHttpDataCallBack okHttpDataCallBack) {
+        final Request request = buildJsonPostRequest(url, json);
+        Call call = okHttpClient.newCall(request);
+        try {
+//            okHttpDataCallBack.onBefore(request);
+            // 请求加入调度
+            call.enqueue(new Callback() {
+
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    okHttpDataCallBack.requestFailure(request, e);
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    //此处也可以解析为byte[],Reader,InputStream
+                    responseStrGETAsyn = response.body().string();
+                    try {
+                        okHttpDataCallBack.requestSuccess(responseStrGETAsyn);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Logger.e("POST异步请求为String解析异常失败" + e.toString());
+                    }
+
+                }
+            });
+//            okHttpDataCallBack.onAfter();
         } catch (Exception e) {
             Logger.e("POST异步请求解析为String异常" + e.toString());
             e.printStackTrace();
@@ -441,7 +490,6 @@ public class OkHttpTool {
      * @return requestBody
      */
     private Request buildJsonPostRequest(String url, String json) {
-//        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
         RequestBody requestBody = RequestBody.create(JSON, json);
         return new Request.Builder().url(url).post(requestBody).build();
     }
@@ -464,7 +512,7 @@ public class OkHttpTool {
      * @return
      */
     private static String urlJoint(String url, Map<String, String> params) {
-        StringBuilder realURL = new StringBuilder(Constant.URL);
+        StringBuilder realURL = new StringBuilder("Constant.URL");
         realURL = realURL.append(url);
         boolean isFirst = true;
         if (params == null) {
@@ -517,7 +565,7 @@ public class OkHttpTool {
 
         Call call = okHttpClient.newCall(request);
         try {
-            okHttpDataCallBack.onBefore(request);
+//            okHttpDataCallBack.onBefore(request);
             // 请求加入调度
             call.enqueue(new Callback() {
 
@@ -539,7 +587,7 @@ public class OkHttpTool {
                 }
             });
 
-            okHttpDataCallBack.onAfter();
+//            okHttpDataCallBack.onAfter();
         } catch (Exception e) {
             Logger.e("POST异步文件上传异常" + e.toString());
             e.printStackTrace();
@@ -574,7 +622,7 @@ public class OkHttpTool {
                 File file = files[i];
                 String fileName = file.getName();
                 fileBody = RequestBody.create(MediaType.parse(guessMimeType(fileName)), file);
-                //TODO 根据文件名设置contentType
+                // 根据文件名设置contentType
                 multipartBody.addPart(Headers.of("Content-Disposition",
                         "form-data; name=\"" + fileKeys[i] + "\"; filename=\"" + fileName + "\""),
                         fileBody);
@@ -589,7 +637,7 @@ public class OkHttpTool {
 
         Call call = okHttpClient.newCall(request);
         try {
-            okHttpDataCallBack.onBefore(request);
+//            okHttpDataCallBack.onBefore(request);
             // 请求加入调度
             call.enqueue(new Callback() {
 
@@ -611,7 +659,7 @@ public class OkHttpTool {
                 }
             });
 
-            okHttpDataCallBack.onAfter();
+//            okHttpDataCallBack.onAfter();
         } catch (Exception e) {
             Logger.e("POST异步文件上传异常" + e.toString());
             e.printStackTrace();
