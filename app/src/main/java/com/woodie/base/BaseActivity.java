@@ -2,15 +2,10 @@ package com.woodie.base;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-
 import com.woodie.bean.SocketAPI;
 import com.woodie.http.OkHttpTool;
-import com.woodie.socketlib.R;
 import com.woodie.socketlib.SocketTool;
-
 import org.greenrobot.eventbus.EventBus;
-
-import butterknife.ButterKnife;
 
 /**
  * ProjectName:    SocketLib
@@ -34,7 +29,6 @@ public class BaseActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        ButterKnife.bind(this);
         EventBus.getDefault().register(this);
 
         mOkHttpTool = OkHttpTool.getInstance();

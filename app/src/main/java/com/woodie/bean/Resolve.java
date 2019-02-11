@@ -16,5 +16,6 @@ public class Resolve {
     public LoginAccountBean LoginAccount(String data){
         LoginAccountBean loginAccountBean = new LoginAccountBean();
 
+        return loginAccountBean;
     }
 }
