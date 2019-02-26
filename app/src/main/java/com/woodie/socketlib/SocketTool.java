@@ -3,7 +3,6 @@ package com.woodie.socketlib;
 import android.content.Context;
 import android.os.Handler;
 import com.orhanobut.logger.Logger;
-import com.woodie.bean.SocketAPI;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
 import com.xuhao.didi.core.pojo.OriginalData;
@@ -15,6 +14,9 @@ import com.xuhao.didi.socket.client.sdk.client.OkSocketOptions;
 import com.xuhao.didi.socket.client.sdk.client.action.SocketActionAdapter;
 import com.xuhao.didi.socket.client.sdk.client.connection.IConnectionManager;
 import com.xuhao.didi.socket.client.sdk.client.connection.NoneReconnect;
+
+import org.greenrobot.eventbus.EventBus;
+
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -54,8 +56,8 @@ public class SocketTool {
         this.mPort = port;
         this.mPackageHead = packageHead;
         this.mPackageEnd = packageEnd;
+        initManager();
         if (mManager == null || !mManager.isConnect()) {
-            initManager();
             mManager.connect();
         }
     }
@@ -94,6 +96,11 @@ public class SocketTool {
         @Override
         public void onSocketConnectionSuccess(ConnectionInfo info, String action) {
             Logger.d("已连接 IP："+info.getIp()+"  port:"+info.getPort()+"  action:"+action);
+            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+            socketListenerEvent.setType(0);
+            socketListenerEvent.setAction(action);
+            socketListenerEvent.setInfo(info);
+            EventBus.getDefault().post(socketListenerEvent);
         }
 
         @Override
@@ -103,17 +110,36 @@ public class SocketTool {
             } else {
                 Logger.d("正常断开(Disconnect Manually)");
             }
+            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+            socketListenerEvent.setType(1);
+            socketListenerEvent.setInfo(info);
+            socketListenerEvent.setAction(action);
+            socketListenerEvent.setE(e);
+            EventBus.getDefault().post(socketListenerEvent);
         }
 
         @Override
         public void onSocketConnectionFailed(ConnectionInfo info, String action, Exception e) {
             Logger.d("连接失败(Connecting Failed)");
+            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+            socketListenerEvent.setType(2);
+            socketListenerEvent.setInfo(info);
+            socketListenerEvent.setAction(action);
+            socketListenerEvent.setE(e);
+            EventBus.getDefault().post(socketListenerEvent);
         }
 
         @Override
         public void onSocketReadResponse(ConnectionInfo info, String action, OriginalData data) {
             List<String> message = receiveMsg(data.getBodyBytes());
             Logger.d("buf buf buf " + message);
+            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+            socketListenerEvent.setType(3);
+            socketListenerEvent.setAction(action);
+            socketListenerEvent.setInfo(info);
+            socketListenerEvent.setData(message);
+            EventBus.getDefault().post(socketListenerEvent);
+
 //            for(String msg : message){
 //                Resolve(msg);
 //            }
@@ -151,7 +177,7 @@ public class SocketTool {
         @Override
         public void onSocketWriteResponse(ConnectionInfo info, String action, ISendable data) {
             String str = new String(data.parse(), Charset.forName("utf-8"));
-            Logger.d(str);
+            Logger.d("Send data: "+str);
         }
 
         @Override
@@ -223,6 +249,12 @@ public class SocketTool {
             }
         }
         return receiveJSONData;
+    }
+
+    public void closeSocket(){
+        if(mManager != null) {
+            mManager.disconnect();
+        }
     }
 
     public void sendData(String content){
