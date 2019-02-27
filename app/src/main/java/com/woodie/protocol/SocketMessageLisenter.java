@@ -14,9 +14,7 @@ import java.io.Serializable;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class SocketMessageLisenter  implements Serializable {
-
-    private static final long serialVersionUID = -2083503801443301445L;
+public class SocketMessageLisenter {
 
     private int seq;
     private Object object;

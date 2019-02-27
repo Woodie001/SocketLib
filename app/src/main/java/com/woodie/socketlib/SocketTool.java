@@ -2,6 +2,8 @@ package com.woodie.socketlib;
 
 import android.content.Context;
 import android.os.Handler;
+import android.util.Log;
+
 import com.orhanobut.logger.Logger;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
@@ -12,6 +14,7 @@ import com.xuhao.didi.socket.client.sdk.OkSocket;
 import com.xuhao.didi.socket.client.sdk.client.ConnectionInfo;
 import com.xuhao.didi.socket.client.sdk.client.OkSocketOptions;
 import com.xuhao.didi.socket.client.sdk.client.action.SocketActionAdapter;
+import com.xuhao.didi.socket.client.sdk.client.connection.DefaultReconnectManager;
 import com.xuhao.didi.socket.client.sdk.client.connection.IConnectionManager;
 import com.xuhao.didi.socket.client.sdk.client.connection.NoneReconnect;
 
@@ -66,10 +69,10 @@ public class SocketTool {
         final Handler handler = new Handler();
         mInfo = new ConnectionInfo(this.mIP, this.mPort);
         mOkOptions = new OkSocketOptions.Builder()
-                .setReconnectionManager(new NoneReconnect())
-                .setConnectTimeoutSecond(10)
+                .setReconnectionManager(new DefaultReconnectManager())
+                .setConnectTimeoutSecond(3)
                 .setWritePackageBytes(1024*6)
-                .setReadPackageBytes(1024*6)
+                .setReadPackageBytes(1024*1024*6)
                 .setReaderProtocol(new CustomIReaderProtocol() {
                     @Override
                     public int getHeaderLength() {
@@ -133,45 +136,14 @@ public class SocketTool {
         public void onSocketReadResponse(ConnectionInfo info, String action, OriginalData data) {
             List<String> message = receiveMsg(data.getBodyBytes());
             Logger.d("buf buf buf " + message);
-            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-            socketListenerEvent.setType(3);
-            socketListenerEvent.setAction(action);
-            socketListenerEvent.setInfo(info);
-            socketListenerEvent.setData(message);
-            EventBus.getDefault().post(socketListenerEvent);
-
-//            for(String msg : message){
-//                Resolve(msg);
-//            }
-
-
-//            String str = new String(data.getBodyBytes(), Charset.forName("utf-8"));
-//            Logger.d("Str " + str);
-//            String testDataSrc = "\u0002{\n" +
-//                    "\t\"type\":\t\"update\",\n" +
-//                    "\t\"command\":\t\"sensor\",\n" +
-//                    "\t\"argument\":\t{\n" +
-//                    "\t\t\"utc\":\t601091392,\n" +
-//                    "\t\t\"ieee\":\t\"5F9F221FC9435000\",\n" +
-//                    "\t\t\"ep\":\t1,\n" +
-//                    "\t\t\"zoneType\":\t21,\n" +
-//                    "\t\t\"name\":\t\"Sensor-229F5F\",\n" +
-//                    "\t\t\"status\":\t33\n" +
-//                    "\t}\n" +
-//                    "}";
-//            byte[] srcdata = testDataSrc.getBytes();
-//            byte[] testData = new byte[srcdata.length + 10];
-//            for(int i = 0 ;i< testData.length;){
-//                if(i == 5){
-//                    for(int m = 0;m< srcdata.length;m++){
-//                        testData[i] = srcdata[m];
-//                        i++;
-//                    }
-//                }
-//                testData[i] = 0x02;
-//                i++;
-//            }
-//            Logger.d("test test test" + receiveMsg(testData));
+            if(message.size() > 0) {
+                SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+                socketListenerEvent.setType(3);
+                socketListenerEvent.setAction(action);
+                socketListenerEvent.setInfo(info);
+                socketListenerEvent.setData(message);
+                EventBus.getDefault().post(socketListenerEvent);
+            }
         }
 
         @Override
@@ -200,13 +172,13 @@ public class SocketTool {
             for(int ii = 0; ii<mStickyPacketData.size(); ii++){
                 datas[ii] = mStickyPacketData.get(ii);
             }
+            mStickyPacketFlag = false;
+            mStickyPacketData.clear();
+            mStickyPacketData = null;
         }
 
-        if (datas.length==0){
-//            Logger.d("receiveMsg == null " +byteArrayToStr(datas));
+        if (datas.length==0) {
             return receiveJSONData;
-        }else{
-//            Logger.d("receiveMsg == " + byteArrayToStr(datas));
         }
         boolean flag = false; //true收到头，false收到尾
         List<Byte> dataBuf =new ArrayList<>(); //用于缓存收到的值
@@ -215,38 +187,59 @@ public class SocketTool {
                 flag = true;
                 dataBuf = new ArrayList<>();
                 mStickyPacketData = new ArrayList<>();
+                dataBuf.add(datas[i]);//把Head存起来
             }else{
-                if(datas[i] == mPackageEnd ||
-                        (datas[i] == mPackageHead && dataBuf.size() > 0) ){
-                    flag = false;
-                    if(i < datas.length-1){
-                        mStickyPacketFlag = true;
-                        if(mStickyPacketData != null){
-                            mStickyPacketData.clear();
-                            mStickyPacketData = null;
-                        }
-                        mStickyPacketData = new ArrayList<>();
-                        for(int m = i+1,n=0; m< datas.length;m++,n++){
-                            mStickyPacketData.add(datas[m]);
-                        }
-                    }else {
-                        mStickyPacketFlag = false;
-                    }
+                if(datas[i] == mPackageEnd) {//单纯收到包尾
+                    flag = false;//收到完整包，继续收下个包
+                    dataBuf.add(datas[i]);//把包尾存起来
                     byte[] bufdata = new byte[dataBuf.size()];
                     for(int l = 0 ;l< dataBuf.size();l++){
                         bufdata[l] = dataBuf.get(l);
                     }
-                    if(bufdata.length > 0) {
+                    //必须大于2，不然只剩包头包尾，那就没必要发出去解析等
+                    if(bufdata.length > 2) {
                         receiveJSONData.add(byteArrayToStr(bufdata));
                     }
-                }else if(datas[i] == mPackageHead &&
-                        dataBuf.size() == 0){
+                } else if(datas[i] == mPackageHead && dataBuf.size() >= 2) {
+                    flag = false;//收到完整包，继续收下个包
+                    dataBuf.add((byte) mPackageEnd);//伪装一个包尾存起来
+                    byte[] bufdata = new byte[dataBuf.size()];
+                    for(int l = 0 ;l< dataBuf.size();l++){
+                        bufdata[l] = dataBuf.get(l);
+                    }
+                    //必须大于2，不然只剩包头包尾，那就没必要发出去解析等
+                    if(bufdata.length > 2) {
+                        receiveJSONData.add(byteArrayToStr(bufdata));
+                    }
+                } else if(datas[i] == mPackageHead && dataBuf.size() == 1){
+                    //连续收到两个head，抛弃第一个head，从第二个开始接收
                     dataBuf = new ArrayList<>();
                     mStickyPacketData = new ArrayList<>();
-                }else{
+                    dataBuf.add(datas[i]);
+                }else{//收到了head，开始把后面数据存起来
                     dataBuf.add(datas[i]);
                 }
             }
+        }
+        //只有头，没有尾的分包处理。
+        //包括整个包中只有一个head，没有end
+        //或者整个包中，有多个完整包，但是最后一个包只有head，没有end
+        if(dataBuf.size() > 0 && flag) {
+            mStickyPacketFlag = true;
+            if(mStickyPacketData != null){
+                mStickyPacketData.clear();
+                mStickyPacketData = null;
+            }
+            mStickyPacketData = new ArrayList<>();
+            mStickyPacketData.addAll(dataBuf);
+
+//            byte[] bufdata = new byte[dataBuf.size()];
+//            for(int l = 0 ;l< dataBuf.size();l++){
+//                bufdata[l] = dataBuf.get(l);
+//            }
+//            if(bufdata.length > 0) {
+//                Logger.e("mStickyPacketData:  "+byteArrayToStr(bufdata));
+//            }
         }
         return receiveJSONData;
     }

@@ -25,8 +25,16 @@ public class SocketAPI {
     private String end = new String(endflag);
 
     public SocketMessageLisenter RecieveData(String data) {
-        SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
         SocketMessageLisenter map = new SocketMessageLisenter();
+        int start1 = data.indexOf(start);
+        int end1 = data.indexOf(end);
+        if (start1 < 0 || end1 < 0) {
+            return null;
+        }
+        String startBuf = data.substring(start1, start1 + 1);
+        String endBuf = data.substring(end1, end1 + 1);
+        if (startBuf.equals(start) && endBuf.equals(end)) {
+            data = data.substring(1, data.length() - 1);
             JSONTokener jsonParser = new JSONTokener(data);
             JSONObject jsonObj = null;
             try {
@@ -146,12 +154,8 @@ public class SocketAPI {
                         break;
                 }
             }
-        if(map.getObject() != null) {
-            SocketMessageLisenter buf = (SocketMessageLisenter) map.getObject();
-            socketMessageLisenter.setSeq(map.getSeq());
-            socketMessageLisenter.setObject(buf.getObject());
         }
-        return socketMessageLisenter;
+        return map;
     }
 
     public Object RecieveData(String data, float timezone, boolean dst, String area) throws JSONException {
@@ -235,8 +239,7 @@ public class SocketAPI {
     }
 
     private SocketMessageLisenter Resolve(String data) throws JSONException {
-        SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        Object map = null;
+        SocketMessageLisenter map = new SocketMessageLisenter();
         Resolve resolve = new Resolve();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
@@ -251,10 +254,11 @@ public class SocketAPI {
                 case Sequence.ServerLogin:
                     map = resolve.ServerLogin(data);
                     break;
+                case Sequence.GetEPList:
+                    map = resolve.GetEPList(data);
+                    break;
             }
-            socketMessageLisenter.setSeq(sequence);
-            socketMessageLisenter.setObject(map);
-        return socketMessageLisenter;
+        return map;
     }
 
     public String LoginLocalSocket(String username, String password) {

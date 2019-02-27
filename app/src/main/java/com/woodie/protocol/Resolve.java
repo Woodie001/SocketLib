@@ -1,5 +1,6 @@
 package com.woodie.protocol;
 
+import com.woodie.bean.GetEPListBean;
 import com.woodie.bean.LoginAccountBean;
 import com.woodie.bean.SecurityReadRecordInfoBean;
 import com.woodie.bean.ServerLoginBean;
@@ -74,7 +75,69 @@ public class Resolve {
             serverLoginBean.setSession(job.getString("session"));
             serverLoginBean.setUpdate(job.getInt("update"));
             serverLoginBean.setUversion(job.getString("uversion"));
+            socketMessageLisenter.setSeq(serverLoginBean.getSequence());
             socketMessageLisenter.setObject(serverLoginBean);
+        return socketMessageLisenter;
+    }
+
+    public SocketMessageLisenter GetEPList(String data){
+        SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
+        GetEPListBean getEPListBean = new GetEPListBean();
+        JSONTokener jsonParser = new JSONTokener(data);
+        JSONObject jsonObj = null;
+        try {
+            jsonObj = (JSONObject) jsonParser.nextValue();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        assert jsonObj != null;
+        if (jsonObj.optString("mac")!=null){
+            getEPListBean.setGmac(jsonObj.optString("mac"));
+        }
+        getEPListBean.setResult(true);
+        getEPListBean.setDescription(jsonObj.optString("description"));
+        getEPListBean.setSequence(jsonObj.optInt("sequence"));
+        socketMessageLisenter.setSeq(jsonObj.optInt("sequence"));
+        try {
+            JSONObject job = jsonObj.getJSONObject("response");
+            getEPListBean.setTotal(job.getInt("total"));
+            getEPListBean.setStart(job.getInt("start"));
+            getEPListBean.setCount(job.getInt("count"));
+            JSONArray  jobarray=job.getJSONArray("epList");
+            List<String> ieee = new ArrayList<>();
+            List<Integer> ep = new ArrayList<>();
+            List<Integer> netDeviceType = new ArrayList<>();
+            List<Boolean> linkStatus = new ArrayList<>();
+            List<Integer> deviceType = new ArrayList<>();
+            List<String> name = new ArrayList<>();
+            List<Integer> iasZoneType = new ArrayList<>();
+            List<Integer> profileid = new ArrayList<>();
+            List<Integer> clusterFlag = new ArrayList<>();
+            for(int i=0;i<jobarray.length();i++){
+                JSONObject jsonobj = jobarray.getJSONObject(i);
+                ieee.add(jsonobj.optString("ieee"));
+                ep.add(jsonobj.optInt("ep"));
+                netDeviceType.add(jsonobj.getInt("netDeviceType"));
+                linkStatus.add(jsonobj.optBoolean("linkStatus"));
+                deviceType.add(jsonobj.optInt("deviceType"));
+                name.add(jsonobj.optString("name"));
+                iasZoneType.add(jsonobj.optInt("IASZoneType"));
+                profileid.add(jsonobj.optInt("ProfileId"));
+                clusterFlag.add(jsonObj.optInt("clusterFlag"));
+            }
+            getEPListBean.setListIeee(ieee);
+            getEPListBean.setListEp(ep);
+            getEPListBean.setNetDeviceType(netDeviceType);
+            getEPListBean.setLinkStatus(linkStatus);
+            getEPListBean.setDeviceType(deviceType);
+            getEPListBean.setName(name);
+            getEPListBean.setIasZoneType(iasZoneType);
+            getEPListBean.setProfileId(profileid);
+            getEPListBean.setClusterFlag(clusterFlag);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        socketMessageLisenter.setObject(getEPListBean);
         return socketMessageLisenter;
     }
 

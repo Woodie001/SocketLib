@@ -61,7 +61,7 @@ public class MainActivity extends BaseActivity {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void HttpEvent(HttpEvent event) {
 //        Logger.d( "onEventMainThread收到了消息：" + event.getmMsg());
-        LoginAccountBean loginAccountBean = (LoginAccountBean) new Resolve().LoginAccount(event.getmMsg()).getObject();
+        loginAccountBean = (LoginAccountBean) new Resolve().LoginAccount(event.getmMsg()).getObject();
         Logger.d("loginAccountBean：" + loginAccountBean.toString());
         if(mSocketTool != null){
             mSocketTool.closeSocket();

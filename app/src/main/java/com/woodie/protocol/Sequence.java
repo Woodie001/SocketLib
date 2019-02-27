@@ -16,6 +16,7 @@ public class Sequence {
 
     public static final int LocalLogin = 1000;
     public static final int ServerLogin = LocalLogin + 1;
+    public static final int GetEPList = ServerLogin + 1;
 
     public static final int UpdateEPList = 50000;
     public static final int UpdatePCT501 = UpdateEPList + 1;

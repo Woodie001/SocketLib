@@ -3,6 +3,7 @@ package com.woodie.base;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import com.woodie.bean.LoginAccountBean;
 import com.woodie.bean.ServerLoginBean;
 import com.woodie.protocol.Sequence;
 import com.woodie.protocol.SocketAPI;
@@ -38,6 +39,7 @@ public class BaseActivity extends AppCompatActivity {
     public String mUsername;
     public String mPassword;
     public String mSession;
+    public LoginAccountBean loginAccountBean;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +74,7 @@ public class BaseActivity extends AppCompatActivity {
                 break;
             case 1://SocketDisconnection
                 if (event.getE() != null) {
+                    mSocketTool.creatSocket(loginAccountBean.getTcpserver(), loginAccountBean.getTcpport(), 0x02, 0x03);
 //                    Logger.d("异常断开(Disconnected with exception):" + event.getE().getMessage());
                 } else {
 //                    Logger.d("正常断开(Disconnect Manually)");
@@ -80,15 +83,22 @@ public class BaseActivity extends AppCompatActivity {
             case 2://SocketConnectionFailed
                 break;
             case 3://SocketReadResponse
+                Logger.d("EVENT SIZE " + event.getData().size());
                 for(int i = 0; i < event.getData().size(); i++){
-                    SocketMessageLisenter socketMessageLisenter = mSocketAPI.RecieveData(event.getData().get(i));
-                    getMessage(socketMessageLisenter);
+                    String data = event.getData().get(i);
+                    if(data != null || !data.equals("")) {
+                        SocketMessageLisenter socketMessageLisenter = mSocketAPI.RecieveData(data);
+                        if(socketMessageLisenter != null) {
+                            getMessage(socketMessageLisenter);
+                        }
+                    }
                 }
                 break;
         }
     }
 
     private void getMessage(SocketMessageLisenter socketMessageLisenter){
+        Logger.d("Resolve SEQ: " + socketMessageLisenter.getSeq());
         int seq = socketMessageLisenter.getSeq();
         Object bean = socketMessageLisenter.getObject();
         switch (seq) {
