@@ -2,7 +2,6 @@ package com.woodie.socketlib;
 
 import android.content.Context;
 import android.os.Handler;
-import android.util.Log;
 
 import com.orhanobut.logger.Logger;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
@@ -16,7 +15,6 @@ import com.xuhao.didi.socket.client.sdk.client.OkSocketOptions;
 import com.xuhao.didi.socket.client.sdk.client.action.SocketActionAdapter;
 import com.xuhao.didi.socket.client.sdk.client.connection.DefaultReconnectManager;
 import com.xuhao.didi.socket.client.sdk.client.connection.IConnectionManager;
-import com.xuhao.didi.socket.client.sdk.client.connection.NoneReconnect;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -54,14 +52,21 @@ public class SocketTool {
         this.mContext = context;
     }
 
-    public void creatSocket(String ip,int port,int packageHead,int packageEnd) {
+    public void creatSocket(String ip,int port) {
         this.mIP = ip;
         this.mPort = port;
-        this.mPackageHead = packageHead;
-        this.mPackageEnd = packageEnd;
+        this.mPackageHead = 0x02;
+        this.mPackageEnd = 0x03;
         initManager();
         if (mManager == null || !mManager.isConnect()) {
             mManager.connect();
+        }
+    }
+
+    public void destroy(){
+        if (mManager != null) {
+            mManager.disconnect();
+            mManager.unRegisterReceiver(adapter);
         }
     }
 
@@ -149,7 +154,7 @@ public class SocketTool {
         @Override
         public void onSocketWriteResponse(ConnectionInfo info, String action, ISendable data) {
             String str = new String(data.parse(), Charset.forName("utf-8"));
-            Logger.d("Send data: "+str);
+            Logger.d("Owon SDK Send Data: "+str);
         }
 
         @Override

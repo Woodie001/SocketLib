@@ -3,25 +3,30 @@ package com.woodie.base;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import com.orhanobut.logger.AndroidLogAdapter;
+import com.orhanobut.logger.FormatStrategy;
+import com.orhanobut.logger.Logger;
+import com.orhanobut.logger.PrettyFormatStrategy;
 import com.woodie.bean.LoginAccountBean;
 import com.woodie.bean.ServerLoginBean;
+import com.woodie.http.OkHttpTool;
 import com.woodie.protocol.Sequence;
 import com.woodie.protocol.SocketAPI;
-import com.woodie.http.OkHttpTool;
 import com.woodie.protocol.SocketMessageLisenter;
 import com.woodie.socketlib.SocketListenerEvent;
 import com.woodie.socketlib.SocketTool;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import com.orhanobut.logger.Logger;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.base
- * ClassName:      BaseActivity
+ * ClassName:      OwonSDKBaseActivity
  * Description:
  * Author:         woodie
  * CreateDate:     2019/1/31 14:37
@@ -30,15 +35,14 @@ import java.util.TimerTask;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class BaseActivity extends AppCompatActivity {
+public abstract class OwonSDKBaseActivity extends AppCompatActivity {
 
     public SocketTool mSocketTool;//全局sokcet变量
     public SocketAPI mSocketAPI;
     public OkHttpTool mOkHttpTool;
 
-    public String mUsername;
-    public String mPassword;
-    public String mSession;
+
+    private String mSession;
     public LoginAccountBean loginAccountBean;
 
     @Override
@@ -52,6 +56,15 @@ public class BaseActivity extends AppCompatActivity {
         mSocketTool = new SocketTool();
         mSocketTool.getInstance(this);
         mSocketAPI = new SocketAPI();
+
+        FormatStrategy formatStrategy = PrettyFormatStrategy.newBuilder()
+                .showThreadInfo(false)  // (Optional) Whether to show thread info or not. Default true
+                .methodCount(0)         // (Optional) How many method line to show. Default 2
+                .methodOffset(7)        // (Optional) Hides internal method calls up to offset. Default 5
+//                .logStrategy(customLog) // (Optional) Changes the log strategy to print out. Default LogCat
+                .tag("Owon SDK Log: ")   // (Optional) Global tag for every log. Default PRETTY_LOGGER
+                .build();
+        Logger.addLogAdapter(new AndroidLogAdapter(formatStrategy));
     }
 
     @Override
@@ -63,53 +76,52 @@ public class BaseActivity extends AppCompatActivity {
         }
         //取消心跳发送定时器
         sendPulseDataClose();
+        //销毁socket
+        if(mSocketTool != null) {
+            mSocketTool.destroy();
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void SocketListenerEvent(SocketListenerEvent event){
         switch (event.getType()){
             case 0://SocketConnectionSuccess
-//                Logger.d("已连接 IP："+event.getInfo().getIp() + "  port:"+event.getInfo().getPort());
-                mSocketTool.sendData(mSocketAPI.LoginServerSocket(mUsername, mPassword));
+                SocketConnectionSuccess();
                 break;
             case 1://SocketDisconnection
-                if (event.getE() != null) {
-                    mSocketTool.creatSocket(loginAccountBean.getTcpserver(), loginAccountBean.getTcpport(), 0x02, 0x03);
-//                    Logger.d("异常断开(Disconnected with exception):" + event.getE().getMessage());
-                } else {
-//                    Logger.d("正常断开(Disconnect Manually)");
-                }
+                SocketDisConnection(event.getE());
                 break;
             case 2://SocketConnectionFailed
+                SocketConnectionFailed(event.getE());
                 break;
             case 3://SocketReadResponse
-                Logger.d("EVENT SIZE " + event.getData().size());
                 for(int i = 0; i < event.getData().size(); i++){
                     String data = event.getData().get(i);
                     if(data != null || !data.equals("")) {
                         SocketMessageLisenter socketMessageLisenter = mSocketAPI.RecieveData(data);
                         if(socketMessageLisenter != null) {
-                            getMessage(socketMessageLisenter);
+                            //自动开启心跳
+                            if(socketMessageLisenter.getSeq() == Sequence.ServerLogin) {
+                                ServerLoginBean serverLoginBean = (ServerLoginBean) socketMessageLisenter.getObject();
+                                mSession = serverLoginBean.getSession();
+                                sendPulseData();
+                            } else {
+                                getMessage(socketMessageLisenter);
+                            }
                         }
                     }
                 }
                 break;
         }
     }
+    public abstract void getMessage(SocketMessageLisenter socketMessageLisenter);
 
-    private void getMessage(SocketMessageLisenter socketMessageLisenter){
-        Logger.d("Resolve SEQ: " + socketMessageLisenter.getSeq());
-        int seq = socketMessageLisenter.getSeq();
-        Object bean = socketMessageLisenter.getObject();
-        switch (seq) {
-            case Sequence.ServerLogin:
-                ServerLoginBean serverLoginBean = (ServerLoginBean) bean;
-                mSession = serverLoginBean.getSession();
-                sendPulseData();
-                break;
+    public abstract void SocketConnectionSuccess();
 
-        }
-    }
+    public abstract void SocketDisConnection(Exception e);
+
+    public abstract void SocketConnectionFailed(Exception e);
+
     /*
      * 一分钟发送一次心跳
      */

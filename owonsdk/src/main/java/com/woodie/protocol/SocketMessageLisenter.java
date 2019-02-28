@@ -1,7 +1,5 @@
 package com.woodie.protocol;
 
-import java.io.Serializable;
-
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.protocol

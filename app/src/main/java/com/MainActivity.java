@@ -6,12 +6,16 @@ import android.widget.EditText;
 import com.blankj.utilcode.util.RegexUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.orhanobut.logger.Logger;
-import com.woodie.base.BaseActivity;
+import com.woodie.base.OwonSDKBaseActivity;
 import com.woodie.bean.LoginAccountBean;
+import com.woodie.bean.ServerLoginBean;
 import com.woodie.protocol.Resolve;
 import com.woodie.http.HttpEvent;
 import com.woodie.http.OkHttpDataCallBack;
+import com.woodie.protocol.Sequence;
+import com.woodie.protocol.SocketMessageLisenter;
 import com.woodie.socketlib.R;
+import com.woodie.socketlib.SocketMessageInterface;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -22,7 +26,10 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import okhttp3.Request;
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends OwonSDKBaseActivity implements SocketMessageInterface {
+
+    private String mUsername;
+    private String mPassword;
 
     @BindView(R.id.editText) EditText mUserNameET;
     @BindView(R.id.editText2) EditText mPasswordET;
@@ -30,11 +37,6 @@ public class MainActivity extends BaseActivity {
     @OnClick(R.id.button)
     void sendData(Button button) {
         Login();
-//        try {
-//            mSocketTool.sendData(mSocketAPI.Login("oopp","123456"));
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
     }
 
     @Override
@@ -60,13 +62,12 @@ public class MainActivity extends BaseActivity {
      * */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void HttpEvent(HttpEvent event) {
-//        Logger.d( "onEventMainThread收到了消息：" + event.getmMsg());
         loginAccountBean = (LoginAccountBean) new Resolve().LoginAccount(event.getmMsg()).getObject();
-        Logger.d("loginAccountBean：" + loginAccountBean.toString());
         if(mSocketTool != null){
             mSocketTool.closeSocket();
         }
-        mSocketTool.creatSocket(loginAccountBean.getTcpserver(), loginAccountBean.getTcpport(), 0x02, 0x03);
+        assert mSocketTool != null;
+        mSocketTool.creatSocket(loginAccountBean.getTcpserver(), loginAccountBean.getTcpport());
     }
 
     private void Login(){
@@ -76,10 +77,6 @@ public class MainActivity extends BaseActivity {
             ToastUtils.showShort("mUsername and mPassword can't be empty!");
             return;
         }
-//        if(!NetworkUtils.isAvailableByPing()){
-//            ToastUtils.showShort("Network Unavailable");
-//            return;
-//        }
         if(!RegexUtils.isEmail(mUsername)){
             if(RegexUtils.isMobileExact(mUsername) ){
                 mUsername = "86-"+ mUsername;
@@ -103,5 +100,36 @@ public class MainActivity extends BaseActivity {
                 Logger.d(request.toString()+"IOException:"+e.toString());
             }
         });
+    }
+
+    @Override
+    public void SocketConnectionSuccess() {
+        mSocketTool.sendData(mSocketAPI.LoginServerSocket(mUsername, mPassword));
+    }
+
+    @Override
+    public void SocketDisConnection(Exception e) {
+        if (e != null) {
+//                    Logger.d("异常断开(Disconnected with exception):" + event.getE().getMessage());
+        } else {
+//                    Logger.d("正常断开(Disconnect Manually)");
+        }
+    }
+
+    @Override
+    public void SocketConnectionFailed(Exception e) {
+
+    }
+
+    @Override
+    public void getMessage(SocketMessageLisenter socketMessageLisenter) {
+        int seq = socketMessageLisenter.getSeq();
+        Object bean = socketMessageLisenter.getObject();
+        switch (seq) {
+            case Sequence.ServerLogin:
+                ServerLoginBean serverLoginBean = (ServerLoginBean) bean;
+                break;
+
+        }
     }
 }

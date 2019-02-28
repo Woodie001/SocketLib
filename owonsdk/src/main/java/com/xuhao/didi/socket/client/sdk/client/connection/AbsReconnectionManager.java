@@ -1,8 +1,8 @@
 package com.xuhao.didi.socket.client.sdk.client.connection;
 
+import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
 import com.xuhao.didi.core.pojo.OriginalData;
-import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.socket.client.impl.client.PulseManager;
 import com.xuhao.didi.socket.client.sdk.client.ConnectionInfo;
 import com.xuhao.didi.socket.client.sdk.client.action.ISocketActionListener;
