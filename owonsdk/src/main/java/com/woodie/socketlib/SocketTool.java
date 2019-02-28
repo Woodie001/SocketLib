@@ -140,7 +140,9 @@ public class SocketTool {
         @Override
         public void onSocketReadResponse(ConnectionInfo info, String action, OriginalData data) {
             List<String> message = receiveMsg(data.getBodyBytes());
-            Logger.d("buf buf buf " + message);
+            for(int i = 0; i < message.size(); i++) {
+                Logger.d("Owon SDK Response Data: " + message.get(i));
+            }
             if(message.size() > 0) {
                 SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
                 socketListenerEvent.setType(3);
