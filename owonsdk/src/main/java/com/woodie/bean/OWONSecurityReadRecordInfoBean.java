@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.bean
- * ClassName:      SecurityReadRecordInfoBean
+ * ClassName:      OWONSecurityReadRecordInfoBean
  * Description:
  * Author:         woodie
  * CreateDate:     2019/2/25 14:08
@@ -14,7 +14,7 @@ import java.util.List;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class SecurityReadRecordInfoBean extends BaseBean{
+public class OWONSecurityReadRecordInfoBean extends OWONBaseBean {
 
     private int total;
     private int start;

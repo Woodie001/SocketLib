@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.bean
- * ClassName:      UpdateEPListBean
+ * ClassName:      OWONUpdateEPListBean
  * Description:
  * Author:         woodie
  * CreateDate:     2019/2/25 15:15
@@ -14,7 +14,7 @@ import java.util.List;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class UpdateEPListBean extends BaseBean {
+public class OWONUpdateEPListBean extends OWONBaseBean {
 
     private int total;
     private int start;

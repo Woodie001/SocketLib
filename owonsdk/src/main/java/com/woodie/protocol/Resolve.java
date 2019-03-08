@@ -1,13 +1,18 @@
 package com.woodie.protocol;
 
-import com.woodie.bean.GetEPListBean;
-import com.woodie.bean.LoginAccountBean;
-import com.woodie.bean.SecurityReadRecordInfoBean;
-import com.woodie.bean.ServerLoginBean;
-import com.woodie.bean.UpdateEPListBean;
-import com.woodie.bean.UpdatePCT501Bean;
-import com.woodie.bean.WarningSensorBean;
-import com.woodie.bean.WarningSensorNumBean;
+import com.woodie.bean.OWONGetEPListBean;
+import com.woodie.bean.OWONBaseBean;
+import com.woodie.bean.OWONLocalLoginBean;
+import com.woodie.bean.OWONLoginAccountBean;
+import com.woodie.bean.OWONQueryGatewayListBean;
+import com.woodie.bean.OWONRenameGatewayBean;
+import com.woodie.bean.OWONSecurityReadRecordInfoBean;
+import com.woodie.bean.OWONServerLoginBean;
+import com.woodie.bean.OWONUpdateEPListBean;
+import com.woodie.bean.OWONUpdateGatewayStateBean;
+import com.woodie.bean.OWONUpdatePCT501Bean;
+import com.woodie.bean.OWONWarningSensorBean;
+import com.woodie.bean.OWONWarningSensorNumBean;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,9 +35,36 @@ import java.util.List;
  * Version:        1.0
  */
 public class Resolve {
-    public SocketMessageLisenter LoginAccount(String data){
+    public SocketMessageLisenter OWONLocalLogin(String data) throws JSONException{
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        LoginAccountBean loginAccountBean = new LoginAccountBean();
+        OWONLocalLoginBean owonLocalLoginBean = new OWONLocalLoginBean();
+        JSONTokener jsonParser = new JSONTokener(data);
+        JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
+        owonLocalLoginBean.setResult(jsonObj.optBoolean("result"));
+        owonLocalLoginBean.setDescription(jsonObj.optString("description"));
+        owonLocalLoginBean.setSequence(Sequence.OWONLocalLogin);
+        socketMessageLisenter.setSeq(Sequence.OWONLocalLogin);
+        if((jsonObj.optBoolean("result"))){
+            JSONObject job=jsonObj.getJSONObject("response");
+            owonLocalLoginBean.setSession(job.optString("session"));
+            owonLocalLoginBean.setGmac(job.optString("mac"));
+            owonLocalLoginBean.setVersion(job.optString("version"));
+            owonLocalLoginBean.setVersionnum(job.optInt("versionnum"));
+            owonLocalLoginBean.setDeviceType(job.optInt("deviceType"));
+            owonLocalLoginBean.setChiptype(job.optString("chiptype"));
+            owonLocalLoginBean.setWifitype(job.optInt("wifitype"));
+            owonLocalLoginBean.setUtc0(job.optInt("utc0"));
+            owonLocalLoginBean.setTimezone(job.optDouble("timezone"));
+            owonLocalLoginBean.setDst(job.optBoolean("dst"));
+            owonLocalLoginBean.setArea(job.optString("area"));
+            owonLocalLoginBean.setDevModel(job.optString("devModel"));
+            socketMessageLisenter.setObject(owonLocalLoginBean);
+        }
+        return socketMessageLisenter;
+    }
+    public SocketMessageLisenter OWONLoginAccount(String data){
+        SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
+        OWONLoginAccountBean loginAccountBean = new OWONLoginAccountBean();
         JSONTokener jsonParser = new JSONTokener(data);
         try {
             JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
@@ -61,9 +93,9 @@ public class Resolve {
         socketMessageLisenter.setObject(loginAccountBean);
         return socketMessageLisenter;
     }
-    public SocketMessageLisenter ServerLogin(String data) throws JSONException{
+    public SocketMessageLisenter OWONServerLogin(String data) throws JSONException{
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        ServerLoginBean serverLoginBean = new ServerLoginBean();
+        OWONServerLoginBean serverLoginBean = new OWONServerLoginBean();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
             serverLoginBean.setDescription(jsonObj.optString("msg"));
@@ -80,9 +112,121 @@ public class Resolve {
         return socketMessageLisenter;
     }
 
-    public SocketMessageLisenter GetEPList(String data){
+    public SocketMessageLisenter OWONBaseBean(String data){
+        SocketMessageLisenter socketMessageLisenter=new SocketMessageLisenter();
+        JSONTokener jsonParser = new JSONTokener(data);
+        OWONBaseBean baseBean = new OWONBaseBean();
+        try {
+            JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
+            baseBean.setResult(jsonObj.optBoolean("result"));
+            baseBean.setDescription(jsonObj.optString("description"));
+            baseBean.setSequence(jsonObj.optInt("sequence"));
+            socketMessageLisenter.setSeq(jsonObj.optInt("sequence"));
+            socketMessageLisenter.setObject(baseBean);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return socketMessageLisenter;
+    }
+
+    public SocketMessageLisenter OWONQueryGatewayList(String data) throws JSONException{
+        SocketMessageLisenter socketMessageLisenter=new SocketMessageLisenter();
+        OWONQueryGatewayListBean owonQueryGatewayListBean = new OWONQueryGatewayListBean();
+        JSONTokener jsonParser = new JSONTokener(data);
+        JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
+        owonQueryGatewayListBean.setCode(jsonObj.optInt("code"));
+        owonQueryGatewayListBean.setMsg(jsonObj.optString("msg"));
+        owonQueryGatewayListBean.setSequence(jsonObj.optInt("sequence"));
+        socketMessageLisenter.setSeq(jsonObj.optInt("sequence"));
+        JSONObject res=jsonObj.getJSONObject("response");
+        owonQueryGatewayListBean.setPageno(res.optInt("pageno"));
+        owonQueryGatewayListBean.setPagesize(res.optInt("pagesize"));
+        owonQueryGatewayListBean.setTotal(res.optInt("total"));
+        JSONArray jsonArray=res.optJSONArray("rows");
+        List<String> name = new ArrayList<>();
+        List<String> mac = new ArrayList<>();
+        List<Integer> online = new ArrayList<>();
+        List<String> gversion = new ArrayList<>();
+        List<String> area = new ArrayList<>();
+        List<String> chiptype = new ArrayList<>();
+        List<Integer> devicetype = new ArrayList<>();
+        List<String> devmodel = new ArrayList<>();
+        List<Double> timezone = new ArrayList<>();
+        List<Integer> versionnum = new ArrayList<>();
+        List<Integer> wifitype = new ArrayList<>();
+        for(int i=0;i<jsonArray.length();i++){
+            JSONObject jsonobj = jsonArray.getJSONObject(i);
+            name.add(jsonobj.optString("name"));
+            mac.add(jsonobj.optString("mac"));
+            online.add(jsonobj.optInt("online"));
+            gversion.add(jsonobj.optString("gversion"));
+            area.add(jsonobj.optString("area"));
+            chiptype.add(jsonobj.optString("chiptype"));
+            devicetype.add(jsonobj.optInt("devicetype"));
+            devmodel.add(jsonobj.optString("devmodel"));
+            timezone.add(jsonObj.optDouble("timezone"));
+            versionnum.add(jsonobj.optInt("versionnum"));
+            wifitype.add(jsonobj.optInt("wifitype"));
+        }
+        owonQueryGatewayListBean.setName(name);
+        owonQueryGatewayListBean.setMac(mac);
+        owonQueryGatewayListBean.setOnline(online);
+        owonQueryGatewayListBean.setGversion(gversion);
+        owonQueryGatewayListBean.setArea(area);
+        owonQueryGatewayListBean.setChiptype(chiptype);
+        owonQueryGatewayListBean.setDevicetype(devicetype);
+        owonQueryGatewayListBean.setDevmodel(devmodel);
+        owonQueryGatewayListBean.setTimezone(timezone);
+        owonQueryGatewayListBean.setVersionnum(versionnum);
+        owonQueryGatewayListBean.setWifitype(wifitype);
+        socketMessageLisenter.setObject(owonQueryGatewayListBean);
+        return socketMessageLisenter;
+    }
+    public SocketMessageLisenter OWONRenameGateway(String data) throws JSONException{
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        GetEPListBean getEPListBean = new GetEPListBean();
+        OWONRenameGatewayBean owonRenameGatewayBean = new OWONRenameGatewayBean();
+        JSONTokener jsonParser = new JSONTokener(data);
+        JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
+        owonRenameGatewayBean.setCode(jsonObj.optInt("code"));
+        owonRenameGatewayBean.setMsg(jsonObj.optString("msg"));
+        owonRenameGatewayBean.setSequence(jsonObj.optInt("sequence"));
+        owonRenameGatewayBean.setTs(jsonObj.optString("ts"));
+        socketMessageLisenter.setSeq(jsonObj.optInt("sequence"));
+        socketMessageLisenter.setObject(owonRenameGatewayBean);
+        return socketMessageLisenter;
+    }
+    public SocketMessageLisenter OWONUnbindGateway(String data) throws JSONException{
+        SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
+        OWONRenameGatewayBean owonUnbindGatewayBean = new OWONRenameGatewayBean();
+        JSONTokener jsonParser = new JSONTokener(data);
+        JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
+        owonUnbindGatewayBean.setCode(jsonObj.optInt("code"));
+        owonUnbindGatewayBean.setMsg(jsonObj.optString("msg"));
+        owonUnbindGatewayBean.setSequence(jsonObj.optInt("sequence"));
+        owonUnbindGatewayBean.setTs(jsonObj.optString("ts"));
+        socketMessageLisenter.setSeq(jsonObj.optInt("sequence"));
+        socketMessageLisenter.setObject(owonUnbindGatewayBean);
+        return socketMessageLisenter;
+    }
+
+    public SocketMessageLisenter OWONUpdateGatewayState(String data) throws JSONException{
+        SocketMessageLisenter socketMessageLisenter=new SocketMessageLisenter();
+        OWONUpdateGatewayStateBean owonUpdateGatewayStateBean = new OWONUpdateGatewayStateBean();
+        JSONTokener jsonParser = new JSONTokener(data);
+        JSONObject jsonObj = (JSONObject) jsonParser.nextValue();
+        owonUpdateGatewayStateBean.setMac(jsonObj.optString("mac"));
+        owonUpdateGatewayStateBean.setCode(jsonObj.optInt("code"));
+        owonUpdateGatewayStateBean.setMsg(jsonObj.optString("msg"));
+        owonUpdateGatewayStateBean.setSequence(jsonObj.optInt("sequence"));
+        owonUpdateGatewayStateBean.setTs(jsonObj.optString("ts"));
+        socketMessageLisenter.setSeq(jsonObj.optInt("sequence"));
+        socketMessageLisenter.setObject(owonUpdateGatewayStateBean);
+        return socketMessageLisenter;
+    }
+
+    public SocketMessageLisenter OWONGetEPList(String data){
+        SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
+        OWONGetEPListBean getEPListBean = new OWONGetEPListBean();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = null;
         try {
@@ -141,9 +285,9 @@ public class Resolve {
         return socketMessageLisenter;
     }
 
-    public SocketMessageLisenter UpdateEPList(String data){
+    public SocketMessageLisenter OWONUpdateEPList(String data){
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        UpdateEPListBean updateEPListBean = new UpdateEPListBean();
+        OWONUpdateEPListBean updateEPListBean = new OWONUpdateEPListBean();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = null;
         try {
@@ -157,8 +301,8 @@ public class Resolve {
         }
         updateEPListBean.setResult(true);
         updateEPListBean.setDescription("Update EPList Success");
-        updateEPListBean.setSequence(Sequence.UpdateEPList);
-        socketMessageLisenter.setSeq(Sequence.UpdateEPList);
+        updateEPListBean.setSequence(Sequence.OWONUpdateEPList);
+        socketMessageLisenter.setSeq(Sequence.OWONUpdateEPList);
         try {
             JSONObject job = jsonObj.getJSONObject("argument");
             updateEPListBean.setTotal(job.getInt("total"));
@@ -202,9 +346,9 @@ public class Resolve {
         return socketMessageLisenter;
     }
 
-    public SocketMessageLisenter UpdatePCT501(String data) {
+    public SocketMessageLisenter OWONUpdatePCT501(String data) {
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        UpdatePCT501Bean updatePCT501Bean = new UpdatePCT501Bean();
+        OWONUpdatePCT501Bean updatePCT501Bean = new OWONUpdatePCT501Bean();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = null;
         try {
@@ -217,8 +361,8 @@ public class Resolve {
         }
         updatePCT501Bean.setResult(true);
         updatePCT501Bean.setDescription("Update PCT501 Success");
-        updatePCT501Bean.setSequence(Sequence.UpdatePCT501);
-        socketMessageLisenter.setSeq(Sequence.UpdatePCT501);
+        updatePCT501Bean.setSequence(Sequence.OWONUpdatePCT501);
+        socketMessageLisenter.setSeq(Sequence.OWONUpdatePCT501);
         try {
             JSONObject job = jsonObj.getJSONObject("argument");
             updatePCT501Bean.setIeee(job.optString("ieee"));
@@ -240,9 +384,9 @@ public class Resolve {
         return socketMessageLisenter;
     }
 
-    public SocketMessageLisenter WarningSensor(String data){
+    public SocketMessageLisenter OWONWarningSensor(String data){
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        WarningSensorBean warningSensorBean = new WarningSensorBean();
+        OWONWarningSensorBean warningSensorBean = new OWONWarningSensorBean();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = null;
         try {
@@ -256,8 +400,8 @@ public class Resolve {
         }
         warningSensorBean.setResult(true);
         warningSensorBean.setDescription("Warning Sensor Success");
-        warningSensorBean.setSequence(Sequence.WarningSensor);
-        socketMessageLisenter.setSeq(Sequence.WarningSensor);
+        warningSensorBean.setSequence(Sequence.OWONWarningSensor);
+        socketMessageLisenter.setSeq(Sequence.OWONWarningSensor);
         try {
             JSONObject job = jsonObj.getJSONObject("argument");
             warningSensorBean.setIeee(job.optString("ieee"));
@@ -269,9 +413,9 @@ public class Resolve {
         socketMessageLisenter.setObject(warningSensorBean);
         return socketMessageLisenter;
     }
-    public SocketMessageLisenter WarningSensorNum(String data){
+    public SocketMessageLisenter OWONWarningSensorNum(String data){
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        WarningSensorNumBean warningSensorNumBean = new WarningSensorNumBean();
+        OWONWarningSensorNumBean warningSensorNumBean = new OWONWarningSensorNumBean();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = null;
         try {
@@ -285,8 +429,8 @@ public class Resolve {
         }
         warningSensorNumBean.setResult(true);
         warningSensorNumBean.setDescription("WarningNum Sensor Success");
-        warningSensorNumBean.setSequence(Sequence.WarningSensorNum);
-        socketMessageLisenter.setSeq(Sequence.WarningSensorNum);
+        warningSensorNumBean.setSequence(Sequence.OWONWarningSensorNum);
+        socketMessageLisenter.setSeq(Sequence.OWONWarningSensorNum);
         try {
             JSONObject job = jsonObj.getJSONObject("argument");
             warningSensorNumBean.setEventNum(job.optDouble("eventNum"));
@@ -297,9 +441,9 @@ public class Resolve {
         return socketMessageLisenter;
     }
 
-    public SocketMessageLisenter SecurityReadRecordInfo(String data){
+    public SocketMessageLisenter OWONSecurityReadRecordInfo(String data){
         SocketMessageLisenter socketMessageLisenter = new SocketMessageLisenter();
-        SecurityReadRecordInfoBean securityReadRecordInfoBean = new SecurityReadRecordInfoBean();
+        OWONSecurityReadRecordInfoBean securityReadRecordInfoBean = new OWONSecurityReadRecordInfoBean();
         JSONTokener jsonParser = new JSONTokener(data);
         JSONObject jsonObj = null;
         try {

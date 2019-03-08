@@ -3,7 +3,7 @@ package com.woodie.bean;
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.bean
- * ClassName:      WarningSensorNumBean
+ * ClassName:      OWONWarningSensorNumBean
  * Description:
  * Author:         woodie
  * CreateDate:     2019/2/25 14:41
@@ -12,7 +12,7 @@ package com.woodie.bean;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class WarningSensorNumBean extends BaseBean{
+public class OWONWarningSensorNumBean extends OWONBaseBean {
     private double eventNum;
 
     public double getEventNum() {

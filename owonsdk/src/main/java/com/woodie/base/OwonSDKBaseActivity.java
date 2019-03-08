@@ -7,8 +7,8 @@ import com.orhanobut.logger.AndroidLogAdapter;
 import com.orhanobut.logger.FormatStrategy;
 import com.orhanobut.logger.Logger;
 import com.orhanobut.logger.PrettyFormatStrategy;
-import com.woodie.bean.LoginAccountBean;
-import com.woodie.bean.ServerLoginBean;
+import com.woodie.bean.OWONLoginAccountBean;
+import com.woodie.bean.OWONServerLoginBean;
 import com.woodie.http.OkHttpTool;
 import com.woodie.protocol.Sequence;
 import com.woodie.protocol.SocketAPI;
@@ -40,10 +40,7 @@ public abstract class OwonSDKBaseActivity extends AppCompatActivity {
     public SocketTool mSocketTool;//全局sokcet变量
     public SocketAPI mSocketAPI;
     public OkHttpTool mOkHttpTool;
-
-
     private String mSession;
-    public LoginAccountBean loginAccountBean;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,8 +98,8 @@ public abstract class OwonSDKBaseActivity extends AppCompatActivity {
                         SocketMessageLisenter socketMessageLisenter = mSocketAPI.RecieveData(data);
                         if(socketMessageLisenter != null) {
                             //自动开启心跳
-                            if(socketMessageLisenter.getSeq() == Sequence.ServerLogin) {
-                                ServerLoginBean serverLoginBean = (ServerLoginBean) socketMessageLisenter.getObject();
+                            if(socketMessageLisenter.getSeq() == Sequence.OWONServerLogin) {
+                                OWONServerLoginBean serverLoginBean = (OWONServerLoginBean) socketMessageLisenter.getObject();
                                 mSession = serverLoginBean.getSession();
                                 sendPulseData();
                             } else {

@@ -3,7 +3,7 @@ package com.woodie.bean;
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.bean
- * ClassName:      UpdatePCT501Bean
+ * ClassName:      OWONUpdatePCT501Bean
  * Description:
  * Author:         woodie
  * CreateDate:     2019/2/25 15:06
@@ -12,7 +12,7 @@ package com.woodie.bean;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class UpdatePCT501Bean extends BaseBean {
+public class OWONUpdatePCT501Bean extends OWONBaseBean {
 
     private double heatTemp;
     private double coolTemp;

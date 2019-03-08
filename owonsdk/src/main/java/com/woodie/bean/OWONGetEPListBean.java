@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.bean
- * ClassName:      GetEPListBean
+ * ClassName:      OWONGetEPListBean
  * Description:
  * Author:         woodie
  * CreateDate:     2019/2/27 13:49
@@ -14,7 +14,7 @@ import java.util.List;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class GetEPListBean extends BaseBean {
+public class OWONGetEPListBean extends OWONBaseBean {
 
     private int total;
     private int start;

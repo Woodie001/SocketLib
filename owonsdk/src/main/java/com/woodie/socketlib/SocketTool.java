@@ -2,7 +2,7 @@ package com.woodie.socketlib;
 
 import android.content.Context;
 import android.os.Handler;
-
+import com.blankj.utilcode.util.ToastUtils;
 import com.orhanobut.logger.Logger;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
@@ -12,12 +12,11 @@ import com.xuhao.didi.socket.client.impl.client.action.ActionDispatcher;
 import com.xuhao.didi.socket.client.sdk.OkSocket;
 import com.xuhao.didi.socket.client.sdk.client.ConnectionInfo;
 import com.xuhao.didi.socket.client.sdk.client.OkSocketOptions;
+import com.xuhao.didi.socket.client.sdk.client.OkSocketSSLConfig;
 import com.xuhao.didi.socket.client.sdk.client.action.SocketActionAdapter;
 import com.xuhao.didi.socket.client.sdk.client.connection.DefaultReconnectManager;
 import com.xuhao.didi.socket.client.sdk.client.connection.IConnectionManager;
-
 import org.greenrobot.eventbus.EventBus;
-
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -47,9 +46,19 @@ public class SocketTool {
     private ConnectionInfo mInfo;
     private boolean mStickyPacketFlag = false;//是否粘包标志位
     private List<Byte> mStickyPacketData =new ArrayList<>(); //粘包数据存放
+    private boolean mOpenWriteDateToastFlag = false; //是否开启写数据土司打印
+    private boolean mOpenReadDateToastFalg = false; //是否开启发数据土司打印
 
     public void getInstance(Context context){
         this.mContext = context;
+    }
+
+    public void setOpenWriteDateToast(boolean flag) {
+        this.mOpenWriteDateToastFlag = flag;
+    }
+
+    public void setOpenReadDateToast(boolean flag){
+        this.mOpenReadDateToastFalg = flag;
     }
 
     public void creatSocket(String ip,int port) {
@@ -58,6 +67,17 @@ public class SocketTool {
         this.mPackageHead = 0x02;
         this.mPackageEnd = 0x03;
         initManager();
+        if (mManager == null || !mManager.isConnect()) {
+            mManager.connect();
+        }
+    }
+
+    public void creatSSLSocket(String ip,int port) {
+        this.mIP = ip;
+        this.mPort = port;
+        this.mPackageHead = 0x02;
+        this.mPackageEnd = 0x03;
+        initSSLManager();
         if (mManager == null || !mManager.isConnect()) {
             mManager.connect();
         }
@@ -74,6 +94,36 @@ public class SocketTool {
         final Handler handler = new Handler();
         mInfo = new ConnectionInfo(this.mIP, this.mPort);
         mOkOptions = new OkSocketOptions.Builder()
+                .setReconnectionManager(new DefaultReconnectManager())
+                .setConnectTimeoutSecond(3)
+                .setWritePackageBytes(1024*6)
+                .setReadPackageBytes(1024*1024*6)
+                .setReaderProtocol(new CustomIReaderProtocol() {
+                    @Override
+                    public int getHeaderLength() {
+                        return 1;
+                    }
+
+                    @Override
+                    public int getBodyLength(byte[] header, ByteOrder byteOrder) {
+                        return header.length;
+                    }
+                })
+                .setCallbackThreadModeToken(new OkSocketOptions.ThreadModeToken() {
+                    @Override
+                    public void handleCallbackEvent(ActionDispatcher.ActionRunnable runnable) {
+                        handler.post(runnable);
+                    }
+                }).build();
+        mManager = OkSocket.open(mInfo).option(mOkOptions);
+        mManager.registerReceiver(adapter);
+    }
+
+    private void initSSLManager() {
+        final Handler handler = new Handler();
+        mInfo = new ConnectionInfo(this.mIP, this.mPort);
+        mOkOptions = new OkSocketOptions.Builder()
+                .setSSLConfig(new OkSocketSSLConfig.Builder().build())
                 .setReconnectionManager(new DefaultReconnectManager())
                 .setConnectTimeoutSecond(3)
                 .setWritePackageBytes(1024*6)
@@ -128,7 +178,7 @@ public class SocketTool {
 
         @Override
         public void onSocketConnectionFailed(ConnectionInfo info, String action, Exception e) {
-            Logger.d("连接失败(Connecting Failed)");
+            Logger.d("连接失败(Connecting Failed): " + e.getMessage());
             SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
             socketListenerEvent.setType(2);
             socketListenerEvent.setInfo(info);
@@ -142,6 +192,9 @@ public class SocketTool {
             List<String> message = receiveMsg(data.getBodyBytes());
             for(int i = 0; i < message.size(); i++) {
                 Logger.d("Owon SDK Response Data: " + message.get(i));
+                if(mOpenReadDateToastFalg){
+                    ToastUtils.showShort(message.get(i));
+                }
             }
             if(message.size() > 0) {
                 SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
@@ -157,6 +210,9 @@ public class SocketTool {
         public void onSocketWriteResponse(ConnectionInfo info, String action, ISendable data) {
             String str = new String(data.parse(), Charset.forName("utf-8"));
             Logger.d("Owon SDK Send Data: "+str);
+            if(mOpenWriteDateToastFlag) {
+                ToastUtils.showShort(str);
+            }
         }
 
         @Override

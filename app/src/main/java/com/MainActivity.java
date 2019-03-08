@@ -7,8 +7,8 @@ import com.blankj.utilcode.util.RegexUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.orhanobut.logger.Logger;
 import com.woodie.base.OwonSDKBaseActivity;
-import com.woodie.bean.LoginAccountBean;
-import com.woodie.bean.ServerLoginBean;
+import com.woodie.bean.OWONLoginAccountBean;
+import com.woodie.bean.OWONServerLoginBean;
 import com.woodie.protocol.Resolve;
 import com.woodie.http.HttpEvent;
 import com.woodie.http.OkHttpDataCallBack;
@@ -44,6 +44,11 @@ public class MainActivity extends OwonSDKBaseActivity implements SocketMessageIn
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+
+        //是否土司显示发送的数据
+        mSocketTool.setOpenWriteDateToast(false);
+        //是否土司显示收到的数据
+        mSocketTool.setOpenReadDateToast(false);
     }
 
     @Override
@@ -62,12 +67,13 @@ public class MainActivity extends OwonSDKBaseActivity implements SocketMessageIn
      * */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void HttpEvent(HttpEvent event) {
-        loginAccountBean = (LoginAccountBean) new Resolve().LoginAccount(event.getmMsg()).getObject();
+        OWONLoginAccountBean owonLoginAccountBean= (OWONLoginAccountBean) new Resolve().
+                OWONLoginAccount(event.getmMsg()).getObject();
         if(mSocketTool != null){
             mSocketTool.closeSocket();
         }
         assert mSocketTool != null;
-        mSocketTool.creatSocket(loginAccountBean.getTcpserver(), loginAccountBean.getTcpport());
+        mSocketTool.creatSSLSocket(owonLoginAccountBean.getTcpserver(), owonLoginAccountBean.getTcpsslport());
     }
 
     private void Login(){
@@ -88,7 +94,7 @@ public class MainActivity extends OwonSDKBaseActivity implements SocketMessageIn
 
         final String url = "https://connect.owon.com:443/accsystem/api/json";
         mOkHttpTool.postAsynRequireJson(url,
-                mSocketAPI.LoginServerAccountHttp(mUsername, mPassword),
+                mSocketAPI.OWONLoginServerAccountHttp(mUsername, mPassword),
                 new OkHttpDataCallBack() {
             @Override
             public void requestSuccess(Object result) {
@@ -104,7 +110,7 @@ public class MainActivity extends OwonSDKBaseActivity implements SocketMessageIn
 
     @Override
     public void SocketConnectionSuccess() {
-        mSocketTool.sendData(mSocketAPI.LoginServerSocket(mUsername, mPassword));
+        mSocketTool.sendData(mSocketAPI.OWONLoginServerSocket(mUsername, mPassword));
     }
 
     @Override
@@ -126,8 +132,8 @@ public class MainActivity extends OwonSDKBaseActivity implements SocketMessageIn
         int seq = socketMessageLisenter.getSeq();
         Object bean = socketMessageLisenter.getObject();
         switch (seq) {
-            case Sequence.ServerLogin:
-                ServerLoginBean serverLoginBean = (ServerLoginBean) bean;
+            case Sequence.OWONServerLogin:
+                OWONServerLoginBean serverLoginBean = (OWONServerLoginBean) bean;
                 break;
 
         }

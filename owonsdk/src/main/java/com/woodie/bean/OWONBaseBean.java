@@ -3,7 +3,7 @@ package com.woodie.bean;
 /**
  * ProjectName:    SocketLib
  * Package:        com.woodie.bean
- * ClassName:      BaseBean
+ * ClassName:      OWONBaseBean
  * Description:
  * Author:         woodie
  * CreateDate:     2019/2/25 14:10
@@ -12,7 +12,7 @@ package com.woodie.bean;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class BaseBean {
+public class OWONBaseBean {
 
     private boolean result;
     private String description;

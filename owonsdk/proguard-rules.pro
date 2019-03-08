@@ -36,6 +36,8 @@
 #保持泛型
 -keepattributes Signature
 
+-ignorewarnings
+
 #保持所有实现 Serializable 接口的类成员
 -keepclassmembers class * implements java.io.Serializable {
     static final long serialVersionUID;
@@ -56,3 +58,58 @@
 -dontwarn android.test.**
 -dontwarn android.support.test.**
 -dontwarn org.junit.**
+
+
+# EventBus
+-keepattributes *Annotation*
+-keepclassmembers class ** {
+    @org.greenrobot.eventbus.Subscribe <methods>;
+}
+-keep enum org.greenrobot.eventbus.ThreadMode { *; }
+
+# FastJson
+-dontwarn com.alibaba.fastjson.**
+-keep class com.alibaba.fastjson.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
+
+# okhttp3
+-dontwarn okio.**
+-dontwarn okhttp3.**
+-dontwarn javax.annotation.Nullable
+-dontwarn javax.annotation.ParametersAreNonnullByDefault
+
+-dontwarn com.woodie.base.**
+-keep class com.woodie.base.** { *; }
+-dontwarn com.woodie.bean.**
+-keep class com.woodie.bean.** { *; }
+-dontwarn com.woodie.http.**
+-keep class com.woodie.http.** { *; }
+-dontwarn com.woodie.protocol.**
+-keep class com.woodie.protocol.** { *; }
+-dontwarn com.woodie.socketlib.**
+-keep class com.woodie.socketlib.** { *; }
+-dontwarn com.woodie.tool.**
+-keep class com.woodie.tool.** { *; }
+
+# oksocket
+-dontwarn com.xuhao.didi.socket.client.**
+-dontwarn com.xuhao.didi.socket.common.**
+-dontwarn com.xuhao.didi.socket.server.**
+-dontwarn com.xuhao.didi.core.**
+
+-keep class com.xuhao.didi.socket.client.** { *; }
+-keep class com.xuhao.didi.socket.common.** { *; }
+-keep class com.xuhao.didi.socket.server.** { *; }
+-keep class com.xuhao.didi.core.** { *; }
+
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+-keep class com.xuhao.didi.socket.client.sdk.client.OkSocketOptions$* {
+    *;
+}
+-keep class com.xuhao.didi.socket.server.impl.OkServerOptions$* {
+    *;
+}
