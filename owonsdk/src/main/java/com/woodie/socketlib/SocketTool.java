@@ -1,6 +1,5 @@
 package com.woodie.socketlib;
 
-import android.content.Context;
 import android.os.Handler;
 import com.blankj.utilcode.util.ToastUtils;
 import com.orhanobut.logger.Logger;
@@ -16,7 +15,6 @@ import com.xuhao.didi.socket.client.sdk.client.OkSocketSSLConfig;
 import com.xuhao.didi.socket.client.sdk.client.action.SocketActionAdapter;
 import com.xuhao.didi.socket.client.sdk.client.connection.DefaultReconnectManager;
 import com.xuhao.didi.socket.client.sdk.client.connection.IConnectionManager;
-import org.greenrobot.eventbus.EventBus;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -34,9 +32,8 @@ import java.util.List;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class SocketTool {
+public abstract class SocketTool {
 
-    private Context mContext;
     private String  mIP;
     private int     mPort;
     private int     mPackageHead;
@@ -49,9 +46,6 @@ public class SocketTool {
     private boolean mOpenWriteDateToastFlag = false; //是否开启写数据土司打印
     private boolean mOpenReadDateToastFalg = false; //是否开启发数据土司打印
 
-    public void getInstance(Context context){
-        this.mContext = context;
-    }
 
     public void setOpenWriteDateToast(boolean flag) {
         this.mOpenWriteDateToastFlag = flag;
@@ -154,11 +148,11 @@ public class SocketTool {
         @Override
         public void onSocketConnectionSuccess(ConnectionInfo info, String action) {
             Logger.d("已连接 IP："+info.getIp()+"  port:"+info.getPort()+"  action:"+action);
-            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-            socketListenerEvent.setType(0);
-            socketListenerEvent.setAction(action);
-            socketListenerEvent.setInfo(info);
-            EventBus.getDefault().post(socketListenerEvent);
+//            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+//            socketListenerEvent.setType(0);
+//            socketListenerEvent.setAction(action);
+//            socketListenerEvent.setInfo(info);
+            SocketConnectionSuccess(info, action);
         }
 
         @Override
@@ -168,23 +162,23 @@ public class SocketTool {
             } else {
                 Logger.d("正常断开(Disconnect Manually)");
             }
-            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-            socketListenerEvent.setType(1);
-            socketListenerEvent.setInfo(info);
-            socketListenerEvent.setAction(action);
-            socketListenerEvent.setE(e);
-            EventBus.getDefault().post(socketListenerEvent);
+//            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+//            socketListenerEvent.setType(1);
+//            socketListenerEvent.setInfo(info);
+//            socketListenerEvent.setAction(action);
+//            socketListenerEvent.setE(e);
+            SocketDisConnection(info, action, e);
         }
 
         @Override
         public void onSocketConnectionFailed(ConnectionInfo info, String action, Exception e) {
             Logger.d("连接失败(Connecting Failed): " + e.getMessage());
-            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-            socketListenerEvent.setType(2);
-            socketListenerEvent.setInfo(info);
-            socketListenerEvent.setAction(action);
-            socketListenerEvent.setE(e);
-            EventBus.getDefault().post(socketListenerEvent);
+//            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+//            socketListenerEvent.setType(2);
+//            socketListenerEvent.setInfo(info);
+//            socketListenerEvent.setAction(action);
+//            socketListenerEvent.setE(e);
+            SocketConnectionFailed(info, action, e);
         }
 
         @Override
@@ -197,12 +191,12 @@ public class SocketTool {
                 }
             }
             if(message.size() > 0) {
-                SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-                socketListenerEvent.setType(3);
-                socketListenerEvent.setAction(action);
-                socketListenerEvent.setInfo(info);
-                socketListenerEvent.setData(message);
-                EventBus.getDefault().post(socketListenerEvent);
+//                SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
+//                socketListenerEvent.setType(3);
+//                socketListenerEvent.setAction(action);
+//                socketListenerEvent.setInfo(info);
+//                socketListenerEvent.setData(data);
+                getMessage(info, action, message);
             }
         }
 
@@ -221,6 +215,14 @@ public class SocketTool {
             Logger.d(str);
         }
     };
+
+    public abstract void getMessage(ConnectionInfo info, String action, List<String> data);
+
+    public abstract void SocketConnectionSuccess(ConnectionInfo info, String action);
+
+    public abstract void SocketDisConnection(ConnectionInfo info, String action, Exception e);
+
+    public abstract void SocketConnectionFailed(ConnectionInfo info, String action, Exception e);
 
     //接收
     private List<String> receiveMsg(byte[] datas) {
@@ -310,6 +312,7 @@ public class SocketTool {
     public void closeSocket(){
         if(mManager != null) {
             mManager.disconnect();
+            mManager.unRegisterReceiver(adapter);
         }
     }
 
