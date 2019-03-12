@@ -64,22 +64,18 @@ public class BaseActivity extends AppCompatActivity implements SocketMessageInte
 
     @Override
     public void SocketConnectionSuccess() {
-        Logger.d("SocketConnectionSuccess");
     }
 
     @Override
     public void SocketDisConnection(Exception e) {
-//        Logger.d("SocketDisConnection");
     }
 
     @Override
     public void SocketConnectionFailed(Exception e) {
-//        Logger.d("SocketConnectionFailed");
     }
 
     @Override
     public void getMessage(SocketMessageLisenter socketMessageLisenter) {
-//        Logger.d("getMessage");
         int seq = socketMessageLisenter.getSeq();
         Object bean = socketMessageLisenter.getObject();
         switch (seq) {
