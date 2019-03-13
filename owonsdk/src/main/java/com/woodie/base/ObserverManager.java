@@ -39,7 +39,9 @@ public class ObserverManager implements SubjectListener {
     */
     @Override
     public void add(SocketMessageInterface observerListener) {
-        list.add(observerListener);
+        if(!list.contains(observerListener)) {
+            list.add(observerListener);
+        }
     }
 
     /**
