@@ -148,10 +148,6 @@ public abstract class SocketTool {
         @Override
         public void onSocketConnectionSuccess(ConnectionInfo info, String action) {
             Logger.d("已连接 IP："+info.getIp()+"  port:"+info.getPort()+"  action:"+action);
-//            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-//            socketListenerEvent.setType(0);
-//            socketListenerEvent.setAction(action);
-//            socketListenerEvent.setInfo(info);
             SocketConnectionSuccess(info, action);
         }
 
@@ -162,22 +158,12 @@ public abstract class SocketTool {
             } else {
                 Logger.d("正常断开(Disconnect Manually)");
             }
-//            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-//            socketListenerEvent.setType(1);
-//            socketListenerEvent.setInfo(info);
-//            socketListenerEvent.setAction(action);
-//            socketListenerEvent.setE(e);
             SocketDisConnection(info, action, e);
         }
 
         @Override
         public void onSocketConnectionFailed(ConnectionInfo info, String action, Exception e) {
             Logger.d("连接失败(Connecting Failed): " + e.getMessage());
-//            SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-//            socketListenerEvent.setType(2);
-//            socketListenerEvent.setInfo(info);
-//            socketListenerEvent.setAction(action);
-//            socketListenerEvent.setE(e);
             SocketConnectionFailed(info, action, e);
         }
 
@@ -191,11 +177,6 @@ public abstract class SocketTool {
                 }
             }
             if(message.size() > 0) {
-//                SocketListenerEvent socketListenerEvent = new SocketListenerEvent();
-//                socketListenerEvent.setType(3);
-//                socketListenerEvent.setAction(action);
-//                socketListenerEvent.setInfo(info);
-//                socketListenerEvent.setData(data);
                 getMessage(info, action, message);
             }
         }
@@ -298,6 +279,7 @@ public abstract class SocketTool {
             mStickyPacketData = new ArrayList<>();
             mStickyPacketData.addAll(dataBuf);
 
+//            测试代码
 //            byte[] bufdata = new byte[dataBuf.size()];
 //            for(int l = 0 ;l< dataBuf.size();l++){
 //                bufdata[l] = dataBuf.get(l);
@@ -321,7 +303,6 @@ public abstract class SocketTool {
             return;
         }
         if (!mManager.isConnect()) {
-//            Toast.makeText(getApplicationContext(), "Unconnected", LENGTH_SHORT).show();
             Logger.v("Unconnected");
         } else {
             MsgDataBean msgDataBean = new MsgDataBean(content);

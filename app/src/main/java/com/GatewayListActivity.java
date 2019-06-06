@@ -20,14 +20,18 @@ import com.woodie.socketlib.SocketMessageInterface;
  * UpdateRemark:   更新内容
  * Version:        1.0
  */
-public class GatewayListActivity extends Activity implements SocketMessageInterface {
+public class GatewayListActivity extends BaseActivity implements SocketMessageInterface {
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gateway_list_activity);
+    }
 
+    @Override
+    protected void onResume(){
+        super.onResume();
         AppManager.getInstance().getmOwonSDK().registerSocketMessageListener(this);
     }
 
